@@ -87,7 +87,9 @@ Refresh Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ## 📝 注意事项
 
 - 请遵守 Fofa 的使用政策和相关法律法规。
-- 免费代理的稳定性和安全性无法保证，请谨慎使用。
+- 请确保您的 FOFA API Key 有效且有足够的查询额度。
+- 导出的账号信息请妥善保管，注意信息安全。
+- 建议根据网络情况调整 `CONCURRENCY_LIMIT` 参数。
 - 本项目仅用于学习和研究目的，请勿用于非法用途。
 
 ## ⚠️ 免责声明
