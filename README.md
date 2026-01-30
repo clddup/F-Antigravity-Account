@@ -21,7 +21,7 @@
 ```bash
 # 克隆项目
 git clone <repository-url>
-cd Antigravity-Key
+cd F-Antigravity-Account
 
 # 安装依赖
 bun install
