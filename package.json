@@ -4,11 +4,13 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "bun run index.ts"
+    "start": "bun run index.ts",
+    "build": "bun build --compile --minify index.ts --outfile antigravity-key"
   },
   "devDependencies": {
     "@types/async": "^3.2.25",
     "@types/bun": "latest",
+    "@types/figlet": "^1.7.0",
     "@types/progress": "^2.0.7"
   },
   "peerDependencies": {
@@ -16,8 +18,10 @@
   },
   "dependencies": {
     "async": "^3.2.6",
-    "cfonts": "^3.3.1",
     "chalk": "^5.6.2",
+    "figlet": "^1.10.0",
+    "fofa-sdk": "^0.0.1",
+    "gradient-string": "^3.0.0",
     "progress": "^2.0.3"
   }
 }

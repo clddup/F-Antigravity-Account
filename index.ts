@@ -1,12 +1,11 @@
 import { exit } from "process";
-import { Buffer } from "buffer";
 import chalk from 'chalk';
-import { say } from 'cfonts';
+import gradient from 'gradient-string';
 import async from 'async';
 import ProgressBar from 'progress';
+import { FofaClient } from 'fofa-sdk';
 
 // --- 常量配置 ---
-const FOFA_SEARCH_PATH = "/api/v1/search/all";
 const EXPORT_PATH = "/api/accounts/export";
 const REQUEST_TIMEOUT = 5000;
 const CONCURRENCY_LIMIT = parseInt(process.env.CONCURRENCY_LIMIT || '10', 10);
@@ -14,7 +13,6 @@ const PROGRESS_BAR_WIDTH = 20;
 
 // --- Fofa API 配置 ---
 const key = process.env.FOFA_KEY;
-const fields = "link";
 const size = parseInt(process.env.FOFA_SIZE || '100', 10);
 
 // --- 配置验证 ---
@@ -33,13 +31,14 @@ function validateConfig() {
 
 validateConfig();
 
-// --- 类型定义 ---
-interface FofaResponse {
-    error?: boolean;
-    errmsg?: string;
-    results?: string[];
-}
+// --- 初始化 Fofa 客户端 ---
+const fofaClient = new FofaClient({
+    key: key!,
+    timeout: 30000,
+    retries: 3
+});
 
+// --- 类型定义 ---
 interface AccountInfo {
     email: string;
     refresh_token: string;
@@ -57,33 +56,22 @@ const logger = {
 /**
  * 查询 Fofa API
  */
-function queryFofaApi(queryString: string): Promise<string[]> {
-    // logger.info(`正在查询 FOFA: ${queryString}`);
-
-    const queryBase64 = Buffer.from(queryString).toString("base64");
-    const fofaUrl = `https://fofa.info${FOFA_SEARCH_PATH}?key=${key}&qbase64=${queryBase64}&fields=${fields}&size=${size}`;
-    return fetch(fofaUrl, { tls: { rejectUnauthorized: false } })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Fofa API 请求失败，状态码: ${response.status}`);
-            }
-            return response.json() as Promise<FofaResponse>;
-        })
-        .then(fofaData => {
-            if (fofaData.error) {
-                throw new Error(`Fofa API 错误: ${fofaData.errmsg}`);
-            }
-
-            if (!fofaData.results || fofaData.results.length === 0) {
-                return [];
-            }
-
-            return fofaData.results;
-        })
-        .catch((error: any) => {
-            logger.error(`查询失败: ${error.message}`);
-            throw error;
+async function queryFofaApi(queryString: string): Promise<string[]> {
+    try {
+        const response = await fofaClient.search(queryString, {
+            fields: ['link'],
+            size: size
         });
+
+        if (!response.results || response.results.length === 0) {
+            return [];
+        }
+        // 从结果中提取 link 字段
+        return response.results.map(result => result.link as string).filter(Boolean);
+    } catch (error: any) {
+        logger.error(`查询失败: ${error.message}`);
+        throw error;
+    }
 }
 
 /**
@@ -193,13 +181,18 @@ function saveAccountsToFile(accounts: AccountInfo[]): Promise<void> {
 
 // --- 主函数 ---
 function main() {
-    say('Antigravity Key', {
-        font: 'block',
-        align: 'left',
-        gradient: ['#ff6b6b', '#4ecdc4'],
-        independentGradient: true,
-        env: 'node'
-    });
+    console.log(
+        gradient(['#ff6b6b', '#4ecdc4'])(`
+  ___       _   _                       _ _         _  __
+ / _ \\     | | (_)                     (_) |       | |/ /
+/ /_\\ \\_ __| |_ _  __ _ _ __ __ ___   ___| |_ _   _| ' / ___ _   _
+|  _  | '_ \\ __| |/ _\` | '__/ _\` \\ \\ / / | __| | | |  < / _ \\ | | |
+| | | | | | | |_| | (_| | | | (_| |\\ V /| | |_| |_| | . \\  __/ |_| |
+\\_| |_/_| |_|\\__|_|\\__, |_|  \\__,_| \\_/ |_|\\__|\\__, |_|\\_\\___|\\__, |
+                    __/ |                       __/ |         __/ |
+                   |___/                       |___/         |___/
+`)
+    );
 
     const searchQuery = 'title="Antigravity Console"';
     queryFofaApi(searchQuery)
